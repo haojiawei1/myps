@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            list-style: none;
+        }
+        .box{
+            width:1000px;
+            height:500px;
+            border:1px solid #ccc;
+            position: fixed;
+            top:0;
+            bottom:0;
+            left:0;
+            right:0;
+            margin:auto;
+        }
+        .menu{
+            width:100%;
+            height:10%;
+            background:#000;
+            margin:0 auto;
+        }
+        
+        .menu>ul{
+            width:100%;
+            height:100%;
+            margin:0 auto;
+            float: left;
+            cursor: pointer;
+        }
+        .menu>ul>li:hover{
+            color: red;
+        }
+        .menu>ul>li{
+            width: 125px;
+            height:100%;
+            float: left;
+            text-align: center;
+            line-height:50px;
+            color: #fff;
+            position: relative;
+        }
+        .menu-list{
+            width:100%;
+            color: #000;
+            display:none;
+            position: absolute;
+            top:100%;
+            left:0;
+            z-index: 1000;
+        }
+        .menu-list li{
+            background: rgba(0,0,0,0.7);
+            margin-top:1px;
+            color: #fff;
+        }
+        .main{
+            width:100%;
+            height:90%;
+            position: relative;
+        }
+        .canvas-box{
+            width:100%;
+            height:100%;
+            float: left;
+            position:absolute;
+            top:0;
+            left:0;
+        }
+        .canvas-box canvas{
+            background:#ccc;
+        }
+        .canvas-box .copy{
+            position: absolute;
+            left:0;top:0;z-index:;
+            width:100%;height:100%;
+        }
+
+    </style>
+    <script src="js/jquery.js"></script>
+    <script src="js/shape1.js"></script>
+
+</head>
+<body>
+<div class="box">
+    <div class="menu">
+        <ul>
+            <li>文件
+                <ul class="menu-list">
+                    <li>新建</li>
+                    <li>保存</li>
+                </ul>
+            </li>
+            <li>画图
+                <ul class="menu-list">
+                    <li data-role="line">画线</li>
+                    <li data-role="rect">矩形</li>
+                    <li data-role="arc">圆</li>
+                    <li data-role="bian">多边形</li>
+                    <li data-role="jiao">多角形</li>
+                    <li data-role="pen">铅笔工具</li>
+                </ul>
+            </li>
+            <li>画图方式
+                <ul class="menu-list">
+                    <li data-role="stroke">描边</li>
+                    <li data-role="fill">填充</li>
+                </ul>
+            </li>
+            <li>
+                <input type="color" data-role="border">
+                <ul class="menu-list">
+                    <li></li>
+                </ul>
+
+            </li>
+            <li>
+                <input type="color" data-role="fill">
+                <ul class="menu-list">
+                    <li></li>
+                </ul>
+
+            </li>
+            <li>粗细
+                <input type="number" style="width:50px" data-role="null">
+                <ul class="menu-list">
+                </ul>
+            </li>
+
+            <li>擦除
+                <input type="number" style="width:50px">
+                <ul class="menu-list">
+                    <li></li>
+                </ul>
+            </li>
+            <li>后退</li>
+        </ul>
+    </div>
+    <div class="main">
+    <div class="canvas-box">
+        <canvas>
+        </canvas>
+        <div class="copy">
+
+        </div>
+    </div>
+    </div>
+</div>
+</body>
+<script>
+    window.onload=function(){
+        var canvasBox=document.querySelector(".canvas-box");
+        var canvasBoxW=canvasBox.offsetWidth;
+        var canvasBoxH=canvasBox.offsetHeight;
+        var canvas=document.querySelector("canvas");
+        var cobj=canvas.getContext("2d");
+        var copy=document.querySelector(".copy");
+        canvas.width=canvasBoxW;
+        canvas.height=canvasBoxH;
+
+        var drawObj=new shape(canvas,copy,cobj);
+        $(".menu>ul>li").click(function(){
+            var index=$(".menu>ul>li").index(this);
+            $(".menu-list").eq(index).slideToggle(300)
+        })
+//       画图
+        $(".menu-list:eq(1) li").click(function(){
+            var fn=$(this).attr("data-role");
+            if(fn!=="pen") {
+                drawObj.type = fn;
+                drawObj.draw();
+            }else{
+                drawObj.pen();
+            }
+        })
+//        画图方式
+        $(".menu-list:eq(2) li").click(function(){
+            var fn=$(this).attr("data-role");
+            drawObj.style=fn;
+            drawObj.draw();
+        })
+//        描边颜色
+        $(".menu>ul>li:eq(3) input").change(function(){
+            drawObj[$(this).attr("data-role")]=$(this).val();
+            drawObj.draw();
+        })
+//        填充颜色
+        $(".menu>ul>li:eq(4) input").change(function(){
+            drawObj[$(this).attr("data-role")]=$(this).val();
+            drawObj.draw();
+        })
+//        线条粗细
+        $(".menu>ul>li:eq(5) input").change(function(){
+            var num=drawObj[$(this).attr("data-role")]=$(this).val();
+            drawObj.linew =num
+            drawObj.draw();
+
+        })
+//        文件
+        $(".menu-list:eq(0) li").click(function(){
+            var index=$(".menu-list:eq(0) li").index(this);
+            if(index==0){
+                if(drawObj.historys.length>0){
+                    var yes=confirm("是否保存");
+                    if(yes){
+                        var url=canvas.toDataURL();
+                        var newurl=url.replace("image/png","stream/octet")
+                        location.href=newurl;
+                    }
+                }
+                cobj.clearRect(0,0,canvas.width,canvas.height);
+                drawObj.historys=[];
+        }else if(index==1){
+                var url=canvas.toDataURL();
+                var newurl=url.replace("image/png","stream/octet")
+                location.href=newurl;
+//
+            }
+
+
+
+    })
+
+        //后退
+        $(".menu>ul>li:eq(7)").click(function(){
+            if(drawObj.historys.length==0){
+//                    //no
+                    cobj.clearRect(0,0,canvas.width,canvas.height);
+                    setTimeout(function(){
+                        alert("不能返回");
+                    },10)
+                }else{
+                    if (drawObj.isback) {
+                        if (drawObj.historys.length == 1) {
+                            drawObj.historys.pop();
+                            cobj.clearRect(0, 0, canvas.width, canvas.height);
+                        } else {
+                            drawObj.historys.pop();
+                            cobj.putImageData(drawObj.historys.pop(), 0, 0);
+                        }
+                    } else {
+                        cobj.putImageData(drawObj.historys.pop(), 0, 0);
+                    }
+
+                    drawObj.isback = false;
+
+                }
+        })
+    }
+</script>
+</html>
